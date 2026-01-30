@@ -1,0 +1,10 @@
+name: Publish Docker Image
+
+on: 
+  pull:
+  push:
+    branches: 
+      - main
+
+jobs:
+  
