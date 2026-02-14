@@ -1,9 +1,16 @@
 package domain
 
 import (
-	"fmt"
+	"errors"
+	"strings"
+	"time"
 
 	"github.com/google/uuid"
+)
+
+var (
+	ErrShortPassword = errors.New("password must be at least 8 characters")
+	ErrInvalidEmail = errors.New("invalid email")
 )
 
 type User struct {
@@ -15,22 +22,20 @@ type User struct {
 	CreatedAt int
 }
 
-func NewUser(email, name string, balance int) (*User, error) {
-	if email == "" {
-		return nil, fmt.Errorf("email cannot be empty")
-	}
-	if name == "" {
-		return nil, fmt.Errorf("name cannot be empty")
-	}
-	if balance < 0 {
-		return nil, fmt.Errorf("balance cannot be negative")
+func NewUser(email, password string) (*User, error){
+	if len(password) < 8 {
+		return nil, ErrShortPassword
 	}
 
+	if !strings.Contains(email, "@") {
+		return nil, ErrInvalidEmail
+	}
 	return &User{
 		ID:      uuid.NewString(),
 		Email:   email,
-		Balance: balance,
-		Name:    name,
+		Password: password,
+		Balance:   0,
+		CreatedAt: int(time.Now().Unix()),
 	}, nil
 }
 

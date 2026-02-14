@@ -1,7 +1,11 @@
 package domain
 
+import "context"
+
 type UserRepository interface {
-	// Create() (error)
-	FindUserByEmail(email string) (error)
-	
+	Login(ctx context.Context, email, password string) error
+	Signup(ctx context.Context, user *User) error
+	FindUserByEmail(ctx context.Context, email string) (*User, error)
+	UpdateBalance(ctx context.Context, id string, amount int) (int, error)
+	DeleteByID(ctx context.Context, id string) error
 }
