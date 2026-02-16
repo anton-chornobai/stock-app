@@ -1,6 +1,6 @@
 module auth-service
 
-go 1.25.1
+go 1.26
 
 require (
 	github.com/anton-chornobai/stock-protos v0.0.0-20260205153054-e2daf5c1cd7a

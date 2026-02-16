@@ -1,13 +1,13 @@
 package main
 
 import (
-	"log"
-	"net"
+	"auth-service/internal/application"
 	"auth-service/internal/config"
 	"auth-service/internal/infra"
 	"auth-service/internal/infra/postgres"
-	"auth-service/internal/application"
 	grpchandler "auth-service/internal/transport/grpc"
+	"log"
+	"net"
 
 	authpb "github.com/anton-chornobai/stock-protos/auth/gen"
 	"github.com/gin-gonic/gin"
@@ -76,7 +76,11 @@ func main() {
 
 	})
 
-	 r.SetTrustedProxies(nil) 
+	if err := r.SetTrustedProxies(nil); err != nil {
+		log.Fatal("couldnt set proxies")
+	}
 
-	r.Run(":8080")
+	if err := r.Run(":8080"); err != nil {
+		log.Fatal("couldnt start GIN server ")
+	}
 }
