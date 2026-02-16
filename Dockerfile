@@ -4,7 +4,7 @@ FROM golang:1.25-alpine AS builder
 WORKDIR /app
 
 ADD go.mod .
-RUN go mod dowload
+RUN go mod download
 
 COPY . .
 
