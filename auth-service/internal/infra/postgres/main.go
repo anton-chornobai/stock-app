@@ -19,7 +19,7 @@ func OpenDB(connURL string) (*sql.DB, error) {
 	defer cancel()
 
 	if err := db.PingContext(ctx); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("failed to ping db: %w", err)
 	}
 
