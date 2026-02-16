@@ -2,10 +2,17 @@ package application
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"stock-app/internal/services/auth/domain"
-
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
+	"os"
+	"stock-app/internal/services/auth/domain"
+	"time"
+)
+
+var (
+	ErrSignatureNotConfigured = errors.New("jwt secret not configured")
 )
 
 type AuthService struct {
@@ -23,26 +30,45 @@ func NewAuthService(repo domain.UserRepository) *AuthService {
 	}
 }
 
-func (a *AuthService) Signup(ctx context.Context, req SignupRequest) error {
-
+func (a *AuthService) Signup(ctx context.Context, req SignupRequest) (string, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 
 	if err != nil {
-		return fmt.Errorf("couldnt generate hash for password %w", err)
+		return "", fmt.Errorf("couldnt generate hash for password %w", err)
 	}
 
 	user, err := domain.NewUser(req.Email, string(hashedPassword))
 
 	if err != nil {
-		return fmt.Errorf("failed to create new user: %w", err)
+		return "", fmt.Errorf("failed to create new user: %w", err)
 	}
-	err = a.repo.Signup(ctx, user) 
+
+	err = a.repo.Signup(ctx, user)
 
 	if err != nil {
-		return fmt.Errorf("failed to signup user in repo: %w", err)
+		return "", fmt.Errorf("failed to signup user in repo: %w", err)
 	}
 
-	return nil
+	// assigning user hashed password
+	claims := jwt.MapClaims{
+		"sub":  user.ID,
+		"exp":  time.Now().Add(time.Minute * 15).Unix(),
+		"role": user.Role,
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	secret := os.Getenv("SECRET")
+	if secret == "" {
+		return "", ErrSignatureNotConfigured
+	}
+	signedToken, err := token.SignedString([]byte(secret))
+
+	if err != nil {
+		return "", fmt.Errorf("failed to sign jwt: %w", err)
+	}
+
+	return signedToken, nil
 }
 
 func (a *AuthService) Login(ctx context.Context) {

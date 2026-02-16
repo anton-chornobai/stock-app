@@ -5,7 +5,7 @@ import (
 	"net"
 	"stock-app/internal/services/auth/application"
 	"stock-app/internal/services/auth/config"
-	grpchandler "stock-app/internal/services/auth/grpc"
+	grpchandler "stock-app/internal/services/auth/transport/grpc"
 	"stock-app/internal/services/auth/infra"
 	"stock-app/internal/services/auth/infra/postgres"
 

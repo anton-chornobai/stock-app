@@ -4,10 +4,11 @@ FROM golang:1.25-alpine AS builder
 WORKDIR /app
 
 ADD go.mod .
+RUN go mod dowload
 
 COPY . .
 
-RUN go build -o myapp ./cmd/server/main.go
+RUN go build -o myapp ./cmd/auth/main.go
 
 FROM alpine 
 
