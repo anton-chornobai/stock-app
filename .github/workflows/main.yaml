@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  lint:
+  auth-service:
     name: Formatting text
     runs-on: ubuntu-latest
     steps:
@@ -21,3 +21,4 @@ jobs:
         with:
           working-directory: auth-service
           version: latest
+      - run: cd auth-service && golangci-lint run
