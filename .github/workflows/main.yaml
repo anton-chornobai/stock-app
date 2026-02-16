@@ -1,37 +1,23 @@
-name: Publish Docker Image
+name: Build & Test Microservices
 
 on:
-  pull_request:
   push:
     branches:
       - main
 
 jobs:
-  validate:
+  lint:
     name: Formatting text
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Get golang
-        uses: actions/setup-go@v5
+      - name: checkout
+        uses: actions/checkout@v6
+      - name: Set Up golang
+        uses: actions/setup-go@v6
+         with:
+          go-version: '1.26'
+      - name: Set Up linter
+        uses: golangci/golangci-lint-action@v9
         with:
-          go-version: "1.25"
-      - run: go version
-
-      - name: Formatting
-        run: go fmt ./...
-
-      - name: Login in Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build and Push docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/myapp:latest
+          working-directory: auth-service
+          version: latest
