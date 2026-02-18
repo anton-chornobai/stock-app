@@ -6,11 +6,10 @@ import (
 	"auth-service/internal/infra"
 	"auth-service/internal/infra/postgres"
 	grpchandler "auth-service/internal/transport/grpc"
-	"context"
+	"auth-service/internal/transport/http/handlers"
 	"log"
 	"net"
 	"os"
-	"time"
 
 	authpb "github.com/anton-chornobai/stock-protos/auth/gen"
 	"github.com/gin-gonic/gin"
@@ -60,28 +59,10 @@ func main() {
 	}()
 
 	//HTTP GIN SERVER START
+	httpHandler := handlers.NewAuthHandler(*authService)
 	r := gin.Default()
 
-	r.POST("/signup", func(c *gin.Context) {
-		var req application.SignupRequest
-
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(400, gin.H{"error": err.Error()})
-			return
-		}
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 5 * time.Second)
-		defer cancel()
-		token, err := authService.Signup(ctx, req)
-		if err != nil {
-			c.JSON(500, gin.H{"error": err.Error()})
-			return
-		}
-
-		c.JSON(200, gin.H{
-			"token": token,
-			"exp":   time.Now().Add(15 * time.Minute).Unix(),
-		})
-	})
+	r.POST("/signup", httpHandler.Signup)
 	r.POST("/login", func(c *gin.Context) {
 
 	})

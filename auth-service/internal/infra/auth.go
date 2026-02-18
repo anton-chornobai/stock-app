@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -16,9 +15,9 @@ type UserRepo struct {
 
 func (u *UserRepo) Signup(ctx context.Context, user *domain.User) error {
 	_, err := u.DB.Exec(`
-		INSERT INTO users (id, name, email, password, balance, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6);
-	 `, user.ID, user.Name, user.Email, user.Password, user.Balance, user.CreatedAt)
+		INSERT INTO users (id, name, email, password_hash, balance)
+		VALUES ($1, $2, $3, $4, $5);
+	 `, user.ID, user.Name, user.Email, user.Password, user.Balance)
 
 	if err != nil {
 		return fmt.Errorf("couldnt insert new user: %w", err)
@@ -27,10 +26,10 @@ func (u *UserRepo) Signup(ctx context.Context, user *domain.User) error {
 	return nil
 }
 
-func (u *UserRepo) Login(ctx context.Context, email, password string) (*domain.User, error)  {
+func (u *UserRepo) Login(ctx context.Context, email, password string) (*domain.User, error) {
 	var user domain.User
 
-	row := u.DB.QueryRow(`SELECT id, role, hash_password FROM users WHERE email=$1;`, email)
+	row := u.DB.QueryRow(`SELECT id, role, password_hash FROM users WHERE email=$1;`, email)
 
 	err := row.Scan(
 		&user.ID,
@@ -111,7 +110,7 @@ func (u *UserRepo) DeleteByID(ctx context.Context, id string) error {
 	if err != nil {
 		return fmt.Errorf("failed to delete user: %w", err)
 	}
-	// need to check if rows were affected cuz if user is not found then postge doesnt throw 
+	// need to check if rows were affected cuz if user is not found then postge doesnt throw
 	rowsAffected, err := res.RowsAffected()
 
 	if err != nil {

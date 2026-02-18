@@ -3,7 +3,6 @@ package domain
 import (
 	"errors"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -33,7 +32,6 @@ func NewUser(email, password string) (*User, error) {
 		Password:  password,
 		Role: "user",
 		Balance:   0,
-		CreatedAt: int(time.Now().Unix()),
 	}, nil
 }
 
