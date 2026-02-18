@@ -27,32 +27,34 @@ func (u *UserRepo) Signup(ctx context.Context, user *domain.User) error {
 	return nil
 }
 
-func (u *UserRepo) Login(ctx context.Context, email, password string) error {
-	var storedPassowrd string
+func (u *UserRepo) Login(ctx context.Context, email, password string) (*domain.User, error)  {
+	var user domain.User
 
-	row := u.DB.QueryRow(`SELECT password FROM users WHERE email=$1`, email)
+	row := u.DB.QueryRow(`SELECT id, role, hash_password FROM users WHERE email=$1;`, email)
 
 	err := row.Scan(
-		&storedPassowrd,
+		&user.ID,
+		&user.Role,
+		&user.Password,
 	)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return fmt.Errorf("invalid credentials")
+			return nil, fmt.Errorf("invalid credentials")
 		}
-		return fmt.Errorf("db error: %w", err)
+		return nil, fmt.Errorf("db error: %w", err)
 	}
 
 	err = bcrypt.CompareHashAndPassword(
+		[]byte(user.Password),
 		[]byte(password),
-		[]byte(storedPassowrd),
 	)
 
 	if err != nil {
-		return fmt.Errorf("invalid credentials")
+		return nil, fmt.Errorf("invalid credentials")
 	}
 
-	return nil
+	return &user, nil
 }
 
 func (u *UserRepo) FindUserByEmail(ctx context.Context, email string) (*domain.User, error) {
@@ -107,7 +109,7 @@ func (u *UserRepo) DeleteByID(ctx context.Context, id string) error {
 	`, id)
 
 	if err != nil {
-		return fmt.Errorf("failder to delete user: %w", err)
+		return fmt.Errorf("failed to delete user: %w", err)
 	}
 	// need to check if rows were affected cuz if user is not found then postge doesnt throw 
 	rowsAffected, err := res.RowsAffected()

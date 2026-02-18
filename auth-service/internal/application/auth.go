@@ -2,15 +2,14 @@ package application
 
 import (
 	"auth-service/internal/domain"
+	tokenmanager "auth-service/internal/lib/jwt"
 	"context"
 	"errors"
 	"fmt"
-	"os"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
-
-	"time"
 )
 
 var (
@@ -18,17 +17,24 @@ var (
 )
 
 type AuthService struct {
-	repo domain.UserRepository
+	repo   domain.UserRepository
+	secret []byte
 }
 
 type SignupRequest struct {
+	Email    string `json:"email"`
+	Password string	`json:"password"`
+}
+
+type LoginRequest struct {
 	Email    string
 	Password string
 }
 
-func NewAuthService(repo domain.UserRepository) *AuthService {
+func NewAuthService(repo domain.UserRepository, secret []byte) *AuthService {
 	return &AuthService{
-		repo: repo,
+		repo:   repo,
+		secret: secret,
 	}
 }
 
@@ -51,7 +57,22 @@ func (a *AuthService) Signup(ctx context.Context, req SignupRequest) (string, er
 		return "", fmt.Errorf("failed to signup user in repo: %w", err)
 	}
 
-	// assigning user hashed password
+	signedToken, err := tokenmanager.GenerateUserToken(user, a.secret)
+
+	if err != nil {
+		return "", fmt.Errorf("failed to generate token: %w", err)
+	}
+
+	return signedToken, nil
+}
+
+func (a *AuthService) Login(ctx context.Context, req LoginRequest) (string, error) {
+	user, err := a.repo.Login(ctx, req.Email, req.Password)
+
+	if err != nil {
+		return "", fmt.Errorf("couldnt login user in db %w", err)
+	}
+
 	claims := jwt.MapClaims{
 		"sub":  user.ID,
 		"exp":  time.Now().Add(time.Minute * 15).Unix(),
@@ -60,21 +81,12 @@ func (a *AuthService) Signup(ctx context.Context, req SignupRequest) (string, er
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	secret := os.Getenv("SECRET")
-	if secret == "" {
-		return "", ErrSignatureNotConfigured
-	}
-	signedToken, err := token.SignedString([]byte(secret))
-
+	signedToken, err := token.SignedString(a.secret)
 	if err != nil {
-		return "", fmt.Errorf("failed to sign jwt: %w", err)
+		return "", fmt.Errorf("failed to sign JWT: %w", err)
 	}
 
 	return signedToken, nil
-}
-
-func (a *AuthService) Login(ctx context.Context) {
-
 }
 
 func (a *AuthService) Logout(ctx context.Context) {
@@ -90,11 +102,20 @@ func (g *AuthService) FindUserByEmail(ctx context.Context, email string) (*domai
 	return user, nil
 }
 
-func (a *AuthService) DeleteByID(ctx context.Context) {}
+func (a *AuthService) DeleteByID(ctx context.Context, id string) error {
+	err := a.repo.DeleteByID(ctx, id)
+
+	if err != nil {
+		return fmt.Errorf("failed to delete user: %w", err)
+	}
+
+	return nil
+}
 
 func (a *AuthService) ValidateToken() {
 
 }
+
 func (a *AuthService) UpdateProfile() {
 
 }
