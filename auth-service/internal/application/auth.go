@@ -33,7 +33,7 @@ func (a *AuthService) Signup(ctx context.Context, email, password string) (strin
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
 	if err != nil {
-		return "", fmt.Errorf("couldnt generate hash for password %w", err)
+		return "", err
 	}
 
 	user, err := domain.NewUser(email, string(hashedPassword))

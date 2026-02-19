@@ -77,7 +77,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 		if errors.Is(err, domain.ErrInvalidEmail) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "couldnt login user"})
-
+			
 		}
 		return
 	}

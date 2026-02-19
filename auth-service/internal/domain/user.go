@@ -1,16 +1,11 @@
 package domain
 
 import (
-	"errors"
 	"strings"
 
 	"github.com/google/uuid"
 )
 
-var (
-	ErrShortPassword = errors.New("password must be at least 8 characters")
-	ErrInvalidEmail  = errors.New("invalid email")
-)
 
 type User struct {
 	ID        string
