@@ -13,6 +13,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type AuthHandler struct {
+	authService application.AuthService
+	logger      *slog.Logger
+}
+
 type SignupRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password"`
@@ -21,11 +26,6 @@ type SignupRequest struct {
 type LoginRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password"`
-}
-
-type AuthHandler struct {
-	authService application.AuthService
-	logger      *slog.Logger
 }
 
 func NewAuthHandler(authService application.AuthService, logger *slog.Logger) *AuthHandler {
@@ -39,7 +39,8 @@ func (h *AuthHandler) Signup(c *gin.Context) {
 	var req SignupRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		h.logger.Warn("signup", "err", err)
+		c.JSON(400, gin.H{"error": "invalid credentials"})
 		return
 	}
 
@@ -49,10 +50,13 @@ func (h *AuthHandler) Signup(c *gin.Context) {
 	token, err := h.authService.Signup(ctx, req.Email, req.Password)
 
 	if err != nil {
-		h.logger.Warn("signup error", "err", err)
-		c.JSON(500, gin.H{"error": "internal server error"})
+		h.logger.Warn("signup", "err", err)
+		if errors.Is(err, domain.ErrInvalidEmail) {
+			c.JSON(500, gin.H{"error": "internal server error"})
+		}
 		return
 	}
+	c.SetCookie("token", token, 15*60, "/signup", "stock_app", true, true)
 
 	c.JSON(201, gin.H{
 		"token": token,
@@ -77,7 +81,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 		if errors.Is(err, domain.ErrInvalidEmail) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "couldnt login user"})
-			
 		}
 		return
 	}

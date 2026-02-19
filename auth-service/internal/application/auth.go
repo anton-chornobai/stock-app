@@ -4,15 +4,9 @@ import (
 	"auth-service/internal/domain"
 	tokenmanager "auth-service/internal/lib/jwt"
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
-
 	"golang.org/x/crypto/bcrypt"
-)
-
-var (
-	ErrSignatureNotConfigured = errors.New("jwt secret not configured")
 )
 
 type AuthService struct {

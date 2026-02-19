@@ -6,6 +6,7 @@ import (
 	"auth-service/internal/infra"
 	"auth-service/internal/infra/postgres"
 	grpchandler "auth-service/internal/transport/grpc"
+	httphandler "auth-service/internal/transport/http"
 	"auth-service/internal/transport/http/handlers"
 	"log"
 	"log/slog"
@@ -21,8 +22,8 @@ import (
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatalf("Couldnt .env couldnt be loaded %v", err)
-	}	
-	secret := os.Getenv("SECRET") 
+	}
+	secret := os.Getenv("SECRET")
 	if secret == "" {
 		log.Fatalf("Secret couldnt is empty")
 	}
@@ -67,6 +68,7 @@ func main() {
 	httpHandler := handlers.NewAuthHandler(*authService, logger)
 	r := gin.Default()
 
+	r.Use(httphandler.ValidateJWT([]byte(secret)))
 	r.POST("/signup", httpHandler.Signup)
 	r.POST("/login", httpHandler.Login)
 	r.GET("/profile", func(c *gin.Context) {
