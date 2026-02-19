@@ -71,10 +71,7 @@ func main() {
 	r.Use(httphandler.ValidateJWT([]byte(secret)))
 	r.POST("/signup", httpHandler.Signup)
 	r.POST("/login", httpHandler.Login)
-	r.GET("/profile", func(c *gin.Context) {
-
-	})
-
+	
 	if err := r.SetTrustedProxies(nil); err != nil {
 		log.Fatal("couldnt set proxies")
 	}
