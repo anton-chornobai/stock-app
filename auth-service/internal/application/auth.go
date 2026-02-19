@@ -6,9 +6,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
+	"log/slog"
 
-	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -19,42 +18,34 @@ var (
 type AuthService struct {
 	repo   domain.UserRepository
 	secret []byte
+	logger *slog.Logger
 }
 
-type SignupRequest struct {
-	Email    string `json:"email"`
-	Password string	`json:"password"`
-}
-
-type LoginRequest struct {
-	Email    string
-	Password string
-}
-
-func NewAuthService(repo domain.UserRepository, secret []byte) *AuthService {
+func NewAuthService(repo domain.UserRepository, secret []byte, logger *slog.Logger) *AuthService {
 	return &AuthService{
 		repo:   repo,
 		secret: secret,
+		logger: logger,
 	}
 }
 
-func (a *AuthService) Signup(ctx context.Context, req SignupRequest) (string, error) {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+func (a *AuthService) Signup(ctx context.Context, email, password string) (string, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
 	if err != nil {
 		return "", fmt.Errorf("couldnt generate hash for password %w", err)
 	}
 
-	user, err := domain.NewUser(req.Email, string(hashedPassword))
+	user, err := domain.NewUser(email, string(hashedPassword))
 
 	if err != nil {
-		return "", fmt.Errorf("failed to create new user: %w", err)
+		return "", err
 	}
 
 	err = a.repo.Signup(ctx, user)
 
 	if err != nil {
-		return "", fmt.Errorf("failed to signup user in repo: %w", err)
+		return "", err
 	}
 
 	signedToken, err := tokenmanager.GenerateUserToken(user, a.secret)
@@ -66,24 +57,16 @@ func (a *AuthService) Signup(ctx context.Context, req SignupRequest) (string, er
 	return signedToken, nil
 }
 
-func (a *AuthService) Login(ctx context.Context, req LoginRequest) (string, error) {
-	user, err := a.repo.Login(ctx, req.Email, req.Password)
+func (a *AuthService) Login(ctx context.Context, email, password string) (string, error) {
+	user, err := a.repo.Login(ctx, email, password)
 
 	if err != nil {
-		return "", fmt.Errorf("couldnt login user in db %w", err)
+		return "", err
 	}
 
-	claims := jwt.MapClaims{
-		"sub":  user.ID,
-		"exp":  time.Now().Add(time.Minute * 15).Unix(),
-		"role": user.Role,
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	signedToken, err := token.SignedString(a.secret)
+	signedToken, err := tokenmanager.GenerateUserToken(user, a.secret)
 	if err != nil {
-		return "", fmt.Errorf("failed to sign JWT: %w", err)
+		return "", fmt.Errorf("failed to generate JWT: %w", err)
 	}
 
 	return signedToken, nil

@@ -8,6 +8,7 @@ import (
 	grpchandler "auth-service/internal/transport/grpc"
 	"auth-service/internal/transport/http/handlers"
 	"log"
+	"log/slog"
 	"net"
 	"os"
 
@@ -36,8 +37,12 @@ func main() {
 		log.Fatalf("Failed to open DB %v", err)
 	}
 
+	// SLOGGER
+
+	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
+
 	userRepo := &infra.UserRepo{DB: db}
-	authService := application.NewAuthService(userRepo, []byte(secret))
+	authService := application.NewAuthService(userRepo, []byte(secret), logger)
 
 	//GRPC SET UP
 	listener, err := net.Listen("tcp", ":50051")
@@ -59,13 +64,11 @@ func main() {
 	}()
 
 	//HTTP GIN SERVER START
-	httpHandler := handlers.NewAuthHandler(*authService)
+	httpHandler := handlers.NewAuthHandler(*authService, logger)
 	r := gin.Default()
 
 	r.POST("/signup", httpHandler.Signup)
-	r.POST("/login", func(c *gin.Context) {
-
-	})
+	r.POST("/login", httpHandler.Login)
 	r.GET("/profile", func(c *gin.Context) {
 
 	})

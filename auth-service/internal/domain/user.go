@@ -27,11 +27,11 @@ func NewUser(email, password string) (*User, error) {
 		return nil, ErrInvalidEmail
 	}
 	return &User{
-		ID:        uuid.NewString(),
-		Email:     email,
-		Password:  password,
-		Role: "user",
-		Balance:   0,
+		ID:       uuid.NewString(),
+		Email:    email,
+		Password: password,
+		Role:     "user",
+		Balance:  0,
 	}, nil
 }
 

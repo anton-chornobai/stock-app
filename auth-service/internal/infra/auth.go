@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"golang.org/x/crypto/bcrypt"
 )
-
+var (
+	ErrInvalidCredentials = errors.New("invalid credentials")
+)
 type UserRepo struct {
 	DB *sql.DB
 }
@@ -39,7 +41,7 @@ func (u *UserRepo) Login(ctx context.Context, email, password string) (*domain.U
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("invalid credentials")
+			return nil, ErrInvalidCredentials
 		}
 		return nil, fmt.Errorf("db error: %w", err)
 	}
@@ -50,7 +52,7 @@ func (u *UserRepo) Login(ctx context.Context, email, password string) (*domain.U
 	)
 
 	if err != nil {
-		return nil, fmt.Errorf("invalid credentials")
+		return nil, ErrInvalidCredentials
 	}
 
 	return &user, nil
