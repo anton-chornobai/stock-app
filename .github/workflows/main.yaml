@@ -4,10 +4,10 @@ on:
   push:
     branches:
       - main
-
+      
 jobs:
   auth-service:
-    name: Formatting text
+    name: Linter
     runs-on: ubuntu-latest
     steps:
       - name: checkout
@@ -22,3 +22,4 @@ jobs:
           working-directory: auth-service
           version: latest
       - run: cd auth-service && golangci-lint run
+  stock-service:
